@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Caveat";
+  src: url("/fonts/Caveat-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DMSans";
+  src: url("/fonts/DMSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-caveat: "Caveat", cursive;
+  --font-dm-sans: "DMSans", "DM Sans", sans-serif;
+
+  --color-cork: #b97c40;
+  --color-cork-dark: #a06a2e;
+  --color-heading: #1a1a1a;
+  --color-subtitle: #1a1a1a;
+  --color-subtitle-border: #4ade80;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;          /* no scroll — single-viewport page */
+}
+
+body {
+  background: #e9e8e2;
+  color: var(--color-heading);
+  font-family: var(--font-dm-sans);
+  -webkit-font-smoothing: antialiased;
+}
