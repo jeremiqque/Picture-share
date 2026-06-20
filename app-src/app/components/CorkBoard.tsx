@@ -43,16 +43,64 @@ const PHOTOS: Photo[] = [
   { src: "/photos/went-to-swim.jpg",w: 214, h: 241, rot: -10,  left: "67%", top: "46%", z: 3, caption: "went to swim" },
 ];
 
+/** Resize + compress a data-URL to ≤800 px wide at JPEG 0.75 quality.
+ *  Keeps base64 blobs small enough to survive localStorage's ~5 MB cap. */
+function compressImage(dataUrl: string, maxWidth = 800): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const ratio  = Math.min(maxWidth / img.width, 1);
+      const canvas = document.createElement("canvas");
+      canvas.width  = Math.round(img.width  * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.75));
+    };
+    img.src = dataUrl;
+  });
+}
+
+const STORAGE_KEY = "corkboard-user-photos";
+
+function loadSaved(): UserPhoto[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as UserPhoto[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveToDisk(photos: UserPhoto[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(photos));
+  } catch {
+    // quota exceeded — silently ignore (photos still show in session)
+    console.warn("localStorage quota exceeded; photos won't persist across reloads.");
+  }
+}
+
 export default function CorkBoard() {
   const boardRef     = useRef<HTMLDivElement>(null);
   const cardRefs     = useRef<HTMLDivElement[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const userCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const [mobile, setMobile]           = useState(false);
-  const [userPhotos, setUserPhotos]   = useState<UserPhoto[]>([]);
+  const [mobile, setMobile]             = useState(false);
+  const [userPhotos, setUserPhotos]     = useState<UserPhoto[]>([]);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [captionInput, setCaptionInput] = useState("");
+
+  /* ── Restore saved photos on first mount ────────────────────────── */
+  useEffect(() => {
+    const saved = loadSaved();
+    if (saved.length) setUserPhotos(saved);
+  }, []);
+
+  /* ── Persist to localStorage whenever photos change ─────────────── */
+  useEffect(() => {
+    saveToDisk(userPhotos);
+  }, [userPhotos]);
 
   /* ── responsive breakpoint ───────────────────────────────────────── */
   useEffect(() => {
@@ -159,13 +207,15 @@ export default function CorkBoard() {
     });
   }, [userPhotos, mobile]);
 
-  /* ── file picker handler ─────────────────────────────────────────── */
+  /* ── file picker handler — read → compress → preview ────────────── */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      setPendingPhoto(ev.target?.result as string);
+    reader.onload = async (ev) => {
+      const raw        = ev.target?.result as string;
+      const compressed = await compressImage(raw);   // ≤800 px, JPEG 0.75
+      setPendingPhoto(compressed);
       setCaptionInput("");
     };
     reader.readAsDataURL(file);
