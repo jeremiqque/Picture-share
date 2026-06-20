@@ -3,10 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // ── Image optimisation ─────────────────────────────────────────────────
   images: {
+    // SVG photos from Figma contain embedded base64 raster images.
+    // The restrictive sandbox CSP blocks those embedded images on Vercel —
+    // removing it fixes the faint/blank rendering in production.
     dangerouslyAllowSVG: true,
-    contentDispositionType: "attachment",
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    // serve modern formats (WebP / AVIF) automatically
+    // serve modern formats (WebP / AVIF) automatically for JPG/PNG photos
     formats: ["image/avif", "image/webp"],
   },
 

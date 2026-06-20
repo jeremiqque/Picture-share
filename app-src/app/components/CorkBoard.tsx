@@ -4,7 +4,6 @@ import { useRef, useEffect, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { Draggable } from "gsap/Draggable";
-import Image from "next/image";
 
 gsap.registerPlugin(useGSAP, Draggable);
 
@@ -292,8 +291,11 @@ export default function CorkBoard() {
                 )}
               </div>
             ) : (
-              <Image src={p.src} alt={`photo ${i + 1}`} width={p.w} height={p.h} draggable={false}
-                style={{ display: "block", width: "100%", height: "auto" }} priority={i < 3} />
+              /* Plain <img> for SVG assets — bypasses Next.js image pipeline
+                 so the embedded base64 raster data renders correctly on Vercel */
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.src} alt={`photo ${i + 1}`} draggable={false}
+                style={{ display: "block", width: "100%", height: "auto" }} />
             )}
           </div>
         );
